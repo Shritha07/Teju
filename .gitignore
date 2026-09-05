@@ -152,3 +152,6 @@ teju-voice/voices/
 teju-voice/memory/
 teju-voice/memories/
 teju-ui-old/project.zip
+.env
+.venv/
+__pycache__/
