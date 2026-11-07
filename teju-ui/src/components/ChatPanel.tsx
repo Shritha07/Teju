@@ -1,7 +1,6 @@
-import { submitChat } from '../services/ChatService';
 import { useEffect, useRef, useState, type JSX } from 'react';
 import { useAI } from '../context/AIContext';
-import { suggestedPrompts } from '../lib/aiEngine';
+import { generateResponse, streamResponse, suggestedPrompts } from '../lib/aiEngine';
 import { sounds } from '../lib/sound';
 import {
   Send,
@@ -51,27 +50,30 @@ export default function ChatPanel() {
     setInput('');
     setState('thinking');
     if (sounds) sounds.thinking();
-const responseText = await submitChat(
-  trimmed,
-  messages.map((m) => ({
-    role: m.role,
-    content: m.content,
-  })),
-);
+
+    // Simulate thinking delay
+    await new Promise((r) => setTimeout(r, 800 + Math.random() * 600));
+
+    const responseText = generateResponse(trimmed);
     const assistantId = crypto.randomUUID();
     addMessage({
       id: assistantId,
       role: 'assistant',
       content: '',
       timestamp: Date.now(),
-      streaming: false,
+      streaming: true,
     });
     setState('responding');
     if (sounds) sounds.respond();
 
-    updateMessage(assistantId, responseText);
+    let accumulated = '';
+    for await (const token of streamResponse(responseText)) {
+      accumulated += token;
+      updateMessage(assistantId, accumulated);
+    }
     setState('idle');
   }
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
